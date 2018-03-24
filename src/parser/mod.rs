@@ -18,6 +18,7 @@
 
 pub fn parse(line: &str) -> Vec<&str>{
     // Temporary until actual parsing
+    // Just split from whitespaces for now
     let split = line.split_whitespace();
     return split.collect();
 }

@@ -18,7 +18,7 @@
 
 use runner::command::Command;
 
-use std::env::set_current_dir;
+use std::env::{set_current_dir, current_dir};
 
 pub fn echo(cmd: &Command) {
     for s in cmd.skip(1) {
@@ -40,5 +40,13 @@ fn cd_impl(dir: &str) {
     let res = set_current_dir(dir);
     if let Err(e) = res {
         eprintln!("Cannot change directory: {0}", e);
+    }
+}
+
+pub fn pwd(_cmd: &Command){
+    let cd = current_dir();
+    match cd {
+        Ok(dir) => println!("{}", dir.display()),
+        Err(e) => eprintln!("Cannot obtain active directory: {}", e)
     }
 }

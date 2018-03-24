@@ -17,6 +17,7 @@
 */
 
 extern crate rustyline;
+extern crate ansi_term;
 
 use rustyline::completion::FilenameCompleter;
 use rustyline::{Config, Editor, CompletionType, EditMode};
@@ -25,29 +26,36 @@ mod parser;
 mod runner;
 
 fn main() {
+    let prompt = util::Prompt::new();
+
     let config = Config::builder()
         .history_ignore_space(true)
         .completion_type(CompletionType::List)
         .edit_mode(EditMode::Emacs)
         .build();
 
+    // Create a basic filename completer for now
     let completer = FilenameCompleter::new();
     let mut rl = Editor::with_config(config);
     rl.set_completer(Some(completer));
     let history_path = util::get_history_text_path();
+    // Inform the user if there is no previous history file
     if let Err(_) = rl.load_history(&history_path) {
         println!("No previous history, creating history in {}", history_path.display());
     }
     'read_loop: loop {
-        let readline = rl.readline(&util::get_prompt());
+        let readline = rl.readline(&prompt.get_str());
         match readline {
-            Ok(line_raw) => {
-                if line_raw.trim() == "exit" {
+            Ok(line) => {
+                // Parse the line into command / arguments
+                let parsed = parser::parse(&line);
+                // Exit if exit is entered
+                if parsed.len() != 0 && parsed[0] == "exit" {
                     break 'read_loop;
                 }
-                let line = line_raw.trim().to_owned();
+                // Add to history if not exit
                 rl.add_history_entry(line.as_ref());
-                let parsed = parser::parse(&line);
+                // Run the parsed input
                 runner::run(parsed);
             }
             Err(err) => {
@@ -69,29 +77,63 @@ mod util {
     use std::path::PathBuf;
     use std::borrow::Cow;
 
-    #[cfg(unix)]
-    static PROMPT: &'static str = "\x1b[1;32m>>\x1b[0m ";
+    use ansi_term;
 
-    #[cfg(windows)]
-    static PROMPT: &'static str = ">> ";
+    static PROMPT_ANSI: &'static str = "\x1b[1;32m>>\x1b[0m ";
+    static PROMPT_NORMAL: &'static str = ">> ";
+
+    pub struct Prompt<'a> {
+        pub prompt_base: &'a str,
+        pub have_ansi: bool,
+    }
+
+    impl<'a> Prompt<'a> {
+        pub fn new() -> Prompt<'a> {
+            // TODO: Config options etc.
+            let have_ansi = Prompt::init_ansi();
+            let prompt = match have_ansi {
+                true => PROMPT_ANSI,
+                false => PROMPT_NORMAL
+            };
+            return Prompt {
+                prompt_base: prompt,
+                have_ansi,
+            };
+        }
+
+        /// Tries to initialize ansi support on Windows and return accordingly
+        /// Always eturns true on linux
+        fn init_ansi() -> bool {
+            if cfg!(windows) {
+                if let Err(_) = ansi_term::enable_ansi_support() {
+                    return false;
+                }
+                return true;
+            } else {
+                return true;
+            }
+        }
+
+        // TODO: To string instead of manual get_str
+        pub fn get_str(&self) -> Cow<'a, str> {
+            let cd = current_dir();
+            let prompt = self.prompt_base;
+            match cd {
+                Ok(dir) => {
+                    let mut dir_str = dir.into_os_string().into_string().unwrap();
+                    dir_str.push(' ');
+                    dir_str.push_str(prompt);
+                    return dir_str.into();
+                }
+                Err(_) => prompt.into()
+            }
+        }
+    }
 
     pub fn get_history_text_path() -> PathBuf {
         match home_dir() {
             Some(path) => path.join(".rusth.history"),
             None => PathBuf::from(".rusth.history")
-        }
-    }
-
-    pub fn get_prompt<'a>() -> Cow<'a, str> {
-        let cd = current_dir();
-        match cd {
-            Ok(dir) => {
-                let mut dir_str = dir.into_os_string().into_string().unwrap();
-                dir_str.push(' ');
-                dir_str.push_str(PROMPT);
-                return dir_str.into();
-            }
-            Err(_) => PROMPT.into()
         }
     }
 }

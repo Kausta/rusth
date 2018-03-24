@@ -8,7 +8,7 @@ description = "A simple shell implemented in rust"
 repository = "https://github.com/Kausta/rusth"
 readme = "README.md"
 license = "Apache-2.0"
-license-file = "LICENSE"
 
 [dependencies]
 rustyline = { git= "https://github.com/kkawakam/rustyline.git", rev= "15de348" }
+ansi_term = "0.11.0"

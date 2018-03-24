@@ -29,6 +29,7 @@ pub fn run_command(c: &Command) {
     match c.command() {
         "echo" => { builtin::echo(c); }
         "cd" => { builtin::cd(c); }
+        "pwd" => { builtin::pwd(c); }
         _ => { executable::run_process(c); }
     };
 }

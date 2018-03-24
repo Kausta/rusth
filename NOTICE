@@ -6,3 +6,7 @@ Licensed under Apache License 2.0
 Includes content from rustyline under MIT License
 https://github.com/kkawakam/rustyline
 Copyright (c) 2015 Katsu Kawakami & rustyline authors
+
+Includes content from rust-ansi-term under MIT License
+https://github.com/ogham/rust-ansi-term
+Copyright (c) 2014 Benjamin Sago
