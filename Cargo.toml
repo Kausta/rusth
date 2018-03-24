@@ -1,0 +1,14 @@
+[package]
+name = "rusth"
+version = "0.1.0"
+authors = ["Caner Korkmaz (Kausta) <info@canerkorkmaz.com>"]
+# Don't publish for now
+publish = false
+description = "A simple shell implemented in rust"
+repository = "https://github.com/Kausta/rusth"
+readme = "README.md"
+license = "Apache-2.0"
+license-file = "LICENSE"
+
+[dependencies]
+rustyline = { git= "https://github.com/kkawakam/rustyline.git", rev= "15de348" }
