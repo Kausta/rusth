@@ -87,6 +87,7 @@ mod util {
     use std::path::PathBuf;
     use std::borrow::Cow;
 
+    #[allow(unused_imports)]
     use ansi_term;
 
     static PROMPT_ANSI: &'static str = "\x1b[1;32m>>\x1b[0m ";
@@ -112,16 +113,17 @@ mod util {
         }
 
         /// Tries to initialize ansi support on Windows and return accordingly
-        /// Always eturns true on linux
+        /// Always returns true on linux
+        #[cfg(windows)]
         fn init_ansi() -> bool {
-            if cfg!(windows) {
-                if let Err(_) = ansi_term::enable_ansi_support() {
-                    return false;
-                }
-                return true;
-            } else {
-                return true;
+            if let Err(_) = ansi_term::enable_ansi_support() {
+                return false;
             }
+            return true;
+        }
+        #[cfg(not(windows))]
+        fn init_ansi() -> bool {
+            return true;
         }
 
         // TODO: To string instead of manual get_str
