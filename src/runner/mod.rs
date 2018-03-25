@@ -22,19 +22,23 @@ use self::command::*;
 mod executable;
 mod builtin;
 
+use std::borrow::Cow;
+
 pub fn run_command(c: &Command) {
     if c.empty() {
         return;
     }
-    match c.command() {
-        "echo" => { builtin::echo(c); }
-        "cd" => { builtin::cd(c); }
-        "pwd" => { builtin::pwd(c); }
-        _ => { executable::run_process(c); }
+    let method = match builtin::get_builtin(c.command()) {
+        Some(builtin) => builtin,
+        None => executable::get_run_process()
     };
+    match method(c) {
+        Some(code) => println!("Exited with: {}", code),
+        None => eprintln!("Returned without error code, probably killed by a signal")
+    }
 }
 
-pub fn run(args: Vec<&str>) {
+pub fn run(args: Vec<Cow<str>>) {
     let command = Command::new(args);
     run_command(&command);
 }

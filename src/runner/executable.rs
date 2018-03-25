@@ -16,38 +16,44 @@
  * limitations under the License.
 */
 
-use runner::command::Command as Cmd;
+use runner::command::{Command as Cmd, Method};
 
 use std::ffi::OsStr;
-use std::process::{Command, Output};
+use std::process::Command;
+use std::ops::Deref;
 
-pub fn run_process(cmd: &Cmd) {
-    run_process_impl(cmd.command(), cmd.skip(1));
+pub fn get_run_process() -> Method {
+    return run_process;
 }
 
-fn run_process_impl<I, S>(process_name: &str, args: I) -> Option<Output>
+pub fn run_process(cmd: &Cmd) -> Option<i32> {
+    return run_process_impl(cmd.command(),
+                            cmd.args.iter().map(|item| item.deref()).skip(1));
+}
+
+fn run_process_impl<I, S>(process_name: &str, args: I) -> Option<i32>
     where I: IntoIterator<Item=S>,
           S: AsRef<OsStr> {
     let res = Command::new(process_name)
         .args(args)
         .spawn();
     match res {
-        Ok(child) => {
-            let res = child.wait_with_output();
+        Ok(mut child) => {
+            let res = child.wait();
             match res {
-                Ok(output) => {
+                Ok(exit_status) => {
                     println!("{0} finished", process_name);
-                    return Some(output);
-                },
+                    return exit_status.code();
+                }
                 Err(e) => {
                     eprintln!("Cannot wait for {0}: {1}", process_name, e);
-                    return None;
+                    return Some(-2);
                 }
             }
-        },
+        }
         Err(e) => {
             eprintln!("{0} failed to start: {1}", process_name, e);
-            return None;
+            return Some(-1);
         }
     }
 }

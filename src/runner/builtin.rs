@@ -15,38 +15,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-
-use runner::command::Command;
+use runner::command::{Command, Method};
 
 use std::env::{set_current_dir, current_dir};
 
-pub fn echo(cmd: &Command) {
-    for s in cmd.skip(1) {
-        print!("{} ", *s);
+pub fn get_builtin(cmd_name: &str) -> Option<Method> {
+    match cmd_name {
+        "echo" => Some(echo),
+        "cd" => Some(cd),
+        "pwd" => Some(pwd),
+        _ => None
     }
-    println!();
 }
 
-pub fn cd(cmd: &Command) {
+pub fn echo(cmd: &Command) -> Option<i32> {
+    for s in cmd.args.iter().skip(1) {
+        print!("{} ", s);
+    }
+    println!();
+    return Some(0);
+}
+
+pub fn cd(cmd: &Command) -> Option<i32> {
     let c = cmd.args.len();
     if c < 2 {
         eprintln!("Not enough arguments to cd!");
-        return;
+        return Some(1);
     }
-    cd_impl(cmd.args[1]);
+    return cd_impl(cmd.args[1].as_ref());
 }
 
-fn cd_impl(dir: &str) {
+fn cd_impl(dir: &str) -> Option<i32> {
     let res = set_current_dir(dir);
     if let Err(e) = res {
         eprintln!("Cannot change directory: {0}", e);
+        return Some(2);
     }
+    return Some(0);
 }
 
-pub fn pwd(_cmd: &Command){
+pub fn pwd(_cmd: &Command) -> Option<i32> {
     let cd = current_dir();
     match cd {
-        Ok(dir) => println!("{}", dir.display()),
-        Err(e) => eprintln!("Cannot obtain active directory: {}", e)
+        Ok(dir) => {
+            println!("{}", dir.display());
+            Some(0)
+        },
+        Err(e) => {
+            eprintln!("Cannot obtain active directory: {}", e);
+            Some(1)
+        }
     }
 }

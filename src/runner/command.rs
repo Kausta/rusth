@@ -16,15 +16,15 @@
  * limitations under the License.
 */
 
-use std;
+use std::borrow::Cow;
 
 #[derive(Debug)]
 pub struct Command<'a> {
-    pub args: Vec<&'a str>
+    pub args: Vec<Cow<'a, str>>
 }
 
 impl<'a> Command<'a> {
-    pub fn new(args: Vec<&'a str>) -> Command<'a> {
+    pub fn new(args: Vec<Cow<'a, str>>) -> Command<'a> {
         return Command {
             args
         };
@@ -34,11 +34,10 @@ impl<'a> Command<'a> {
         return self.args.len() == 0;
     }
 
-    pub fn command(&self) -> &'a str {
-        return self.args[0];
-    }
-
-    pub fn skip(&self, c: usize) -> std::iter::Skip<std::slice::Iter<'a, &str>> {
-        return self.args.iter().skip(c);
+    pub fn command(&self) -> &str {
+        return self.args[0].as_ref();
     }
 }
+
+
+pub type Method = fn(&Command) -> Option<i32>;

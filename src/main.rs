@@ -49,21 +49,31 @@ fn main() {
             Ok(line) => {
                 // Parse the line into command / arguments
                 let parsed = parser::parse(&line);
-                // Exit if exit is entered
-                if parsed.len() != 0 && parsed[0] == "exit" {
-                    break 'read_loop;
+                match parsed {
+                    Ok(parsed) => {
+                        // Exit if exit is entered
+                        if parsed.len() != 0 && parsed[0] == "exit" {
+                            break 'read_loop;
+                        }
+                        // Add to history if not exit
+                        rl.add_history_entry(line.as_ref());
+                        // Run the parsed input
+                        runner::run(parsed);
+                    },
+                    Err(e) => {
+                        println!("Error occured in command: {}", e);
+                    }
                 }
-                // Add to history if not exit
-                rl.add_history_entry(line.as_ref());
-                // Run the parsed input
-                runner::run(parsed);
             }
             Err(err) => {
                 use rustyline::error::ReadlineError::*;
                 match err {
                     Interrupted => println!("CTRL-C"),
                     Eof => println!("CTRL-D"),
-                    _ => println!("Error occured: {:?}", err)
+                    _ => {
+                        println!("Error occured: {:?}", err);
+                        continue 'read_loop;
+                    }
                 }
                 break 'read_loop;
             }
