@@ -15,11 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+use runner::windows;
 use runner::command::{Command, Method};
 
 use std::env::{set_current_dir, current_dir};
 
 pub fn get_builtin(cmd_name: &str) -> Option<Method> {
+    if let Some(builtin) = windows::get_builtin(cmd_name) {
+        return Some(builtin);
+    }
     match cmd_name {
         "echo" => Some(echo),
         "cd" => Some(cd),

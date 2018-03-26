@@ -21,6 +21,7 @@ use self::command::*;
 
 mod executable;
 mod builtin;
+mod windows;
 
 use std::borrow::Cow;
 
