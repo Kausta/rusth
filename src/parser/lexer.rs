@@ -42,12 +42,12 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(line: &'a str) -> Lexer {
-        return Lexer {
+        Lexer {
             line,
             iter: line.chars().peekable(),
             tokens: Vec::new(),
             loc: 0,
-        };
+        }
     }
 
     pub fn lex_tokens<'err>(&mut self) -> Result<(), &'err str> {
@@ -59,7 +59,7 @@ impl<'a> Lexer<'a> {
                 Err(e) => return Err(e)
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     fn next_token<'err>(&mut self) -> OptionalResult<Token<'a>, &'err str> {
@@ -130,7 +130,7 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
-        return Err("Cannot find closing \"");
+        Err("Cannot find closing \"")
     }
 
     fn consume_ws(&mut self) -> usize {
@@ -144,7 +144,7 @@ impl<'a> Lexer<'a> {
             }
             self.next();
         }
-        return self.loc;
+        self.loc
     }
 
     fn peek(&mut self) -> Option<&char> {
@@ -160,6 +160,6 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn collect(self) -> Vec<Token<'a>> {
-        return self.tokens;
+        self.tokens
     }
 }

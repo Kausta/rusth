@@ -26,9 +26,9 @@ struct LsVisitor {
 
 impl LsVisitor {
     pub fn new() -> LsVisitor {
-        return LsVisitor {
+        LsVisitor {
             id: 0
-        };
+        }
     }
 
     pub fn visit(&mut self, entry: &DirEntry) {

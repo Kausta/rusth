@@ -30,17 +30,15 @@ pub fn run_process(cmd: &Cmd, run_config: RunConfig) -> Option<i32> {
             match res {
                 Ok(exit_status) => {
                     println!("{0} finished", cmd.command());
-                    return exit_status.code();
+                    exit_status.code()
                 }
                 Err(e) => {
                     eprintln!("Cannot wait for {0}: {1}", cmd.command(), e);
-                    return Some(-2);
+                    Some(-2)
                 }
             }
         }
-        None => {
-            return Some(-1);
-        }
+        None => Some(-1)
     }
 }
 

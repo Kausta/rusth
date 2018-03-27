@@ -35,13 +35,13 @@ impl<'a> Parser<'a> {
     fn collect_items<I>(iter: &mut I) -> (Vec<Cow<'a, str>>, Option<Token<'a>>)
         where I: Iterator<Item=Token<'a>> {
         let mut items = Vec::new();
-        while let Some(token) = iter.next() {
+        for token in iter {
             match token {
                 Token::Str(token) => items.push(token.content),
                 _ => return (items, Some(token))
             }
         }
-        return (items, None);
+        (items, None)
     }
 
     pub fn collect(self) -> Runnable<'a> {

@@ -16,6 +16,9 @@
  * limitations under the License.
 */
 
+#![cfg_attr(test, feature(plugin))]
+#![cfg_attr(test, plugin(clippy))]
+
 extern crate rustyline;
 extern crate ansi_term;
 
@@ -42,7 +45,7 @@ fn main() {
     rl.set_completer(Some(completer));
     let history_path = util::get_history_text_path();
     // Inform the user if there is no previous history file
-    if let Err(_) = rl.load_history(&history_path) {
+    if rl.load_history(&history_path).is_err() {
         println!("No previous history, creating history in {}", history_path.display());
     }
     'read_loop: loop {
@@ -108,29 +111,23 @@ mod util {
         pub fn new() -> Prompt<'a> {
             // TODO: Config options etc.
             let have_ansi = Prompt::init_ansi();
-            let prompt = match have_ansi {
-                true => PROMPT_ANSI,
-                false => PROMPT_NORMAL
-            };
-            return Prompt {
+            let prompt = if have_ansi { PROMPT_ANSI } else { PROMPT_NORMAL };
+            Prompt {
                 prompt_base: prompt,
                 have_ansi,
                 return_code: None,
-            };
+            }
         }
 
         /// Tries to initialize ansi support on Windows and return accordingly
         /// Always returns true on linux
         #[cfg(windows)]
         fn init_ansi() -> bool {
-            if let Err(_) = ansi_term::enable_ansi_support() {
-                return false;
-            }
-            return true;
+            ansi_term::enable_ansi_support().is_ok()
         }
         #[cfg(not(windows))]
         fn init_ansi() -> bool {
-            return true;
+            true
         }
 
         pub fn set_return_code(&mut self, code: Option<i32>) {
@@ -148,7 +145,7 @@ mod util {
             };
             prompt.push_str(self.prompt_base);
             self.reset_state();
-            return prompt;
+            prompt
         }
 
         fn reset_state(&mut self) {

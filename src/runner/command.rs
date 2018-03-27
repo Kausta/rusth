@@ -95,21 +95,21 @@ pub struct Command<'a> {
 
 impl<'a> Command<'a> {
     pub fn new(args: Vec<Cow<'a, str>>) -> Command<'a> {
-        return Command {
+        Command {
             args
-        };
+        }
     }
 
     pub fn empty(&self) -> bool {
-        return self.args.len() == 0;
+        self.args.is_empty()
     }
 
     pub fn command(&self) -> &str {
-        return self.args[0].as_ref();
+        self.args[0].as_ref()
     }
 
     pub fn is_builtin(&self) -> bool {
-        return get_builtin(self.command()).is_some()
+        get_builtin(self.command()).is_some()
     }
 }
 
@@ -133,10 +133,10 @@ pub struct Pipe<'a> {
 
 impl<'a> Pipe<'a> {
     pub fn new(from: Command<'a>, to: Command<'a>) -> Pipe<'a> {
-        return Pipe {
+        Pipe {
             from,
             to,
-        };
+        }
     }
 }
 

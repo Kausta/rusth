@@ -47,7 +47,7 @@ pub fn echo(cmd: &Command) -> Option<i32> {
         print!("{} ", s);
     }
     println!();
-    return Some(0);
+    Some(0)
 }
 
 pub fn cd(cmd: &Command) -> Option<i32> {
@@ -56,7 +56,7 @@ pub fn cd(cmd: &Command) -> Option<i32> {
         eprintln!("Not enough arguments to cd!");
         return Some(1);
     }
-    return cd_impl(cmd.args[1].as_ref());
+    cd_impl(cmd.args[1].as_ref())
 }
 
 fn cd_impl(dir: &str) -> Option<i32> {
@@ -65,7 +65,7 @@ fn cd_impl(dir: &str) -> Option<i32> {
         eprintln!("Cannot change directory: {0}", e);
         return Some(2);
     }
-    return Some(0);
+    Some(0)
 }
 
 pub fn pwd(_cmd: &Command) -> Option<i32> {
