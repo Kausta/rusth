@@ -16,30 +16,14 @@
  * limitations under the License.
 */
 
-mod command;
+pub mod command;
 use self::command::*;
 
 mod executable;
 mod builtin;
+#[cfg(windows)]
 mod windows;
 
-use std::borrow::Cow;
-
-pub fn run_command(c: &Command) {
-    if c.empty() {
-        return;
-    }
-    let method = match builtin::get_builtin(c.command()) {
-        Some(builtin) => builtin,
-        None => executable::get_run_process()
-    };
-    match method(c) {
-        Some(code) => println!("Exited with: {}", code),
-        None => eprintln!("Returned without error code, probably killed by a signal")
-    }
-}
-
-pub fn run(args: Vec<Cow<str>>) {
-    let command = Command::new(args);
-    run_command(&command);
+pub fn run_command(cmd: &mut Runnable) -> Option<i32> {
+    cmd.run(RunConfig::default())
 }

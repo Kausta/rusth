@@ -25,8 +25,10 @@ use rustyline::{Config, Editor, CompletionType, EditMode};
 mod parser;
 mod runner;
 
+use runner::command::Runnable;
+
 fn main() {
-    let prompt = util::Prompt::new();
+    let mut prompt = util::Prompt::new();
 
     let config = Config::builder()
         .history_ignore_space(true)
@@ -44,22 +46,25 @@ fn main() {
         println!("No previous history, creating history in {}", history_path.display());
     }
     'read_loop: loop {
-        let readline = rl.readline(&prompt.get_str());
+        let readline = rl.readline(&prompt.make_prompt());
         match readline {
             Ok(line) => {
                 // Parse the line into command / arguments
                 let parsed = parser::parse(&line);
                 match parsed {
-                    Ok(parsed) => {
+                    Ok(mut parsed) => {
                         // Exit if exit is entered
-                        if parsed.len() != 0 && parsed[0] == "exit" {
-                            break 'read_loop;
+                        if let Runnable::Cmd(ref mut cmd) = parsed {
+                            if !cmd.empty() && cmd.command() == "exit" {
+                                break 'read_loop;
+                            }
                         }
                         // Add to history if not exit
                         rl.add_history_entry(line.as_ref());
                         // Run the parsed input
-                        runner::run(parsed);
-                    },
+                        let code = runner::run_command(&mut parsed);
+                        prompt.set_return_code(code);
+                    }
                     Err(e) => {
                         println!("Error occured in command: {}", e);
                     }
@@ -85,7 +90,7 @@ fn main() {
 mod util {
     use std::env::{home_dir, current_dir};
     use std::path::PathBuf;
-    use std::borrow::Cow;
+    use std::fmt::Write;
 
     #[allow(unused_imports)]
     use ansi_term;
@@ -96,6 +101,7 @@ mod util {
     pub struct Prompt<'a> {
         pub prompt_base: &'a str,
         pub have_ansi: bool,
+        return_code: Option<i32>,
     }
 
     impl<'a> Prompt<'a> {
@@ -109,6 +115,7 @@ mod util {
             return Prompt {
                 prompt_base: prompt,
                 have_ansi,
+                return_code: None,
             };
         }
 
@@ -126,19 +133,26 @@ mod util {
             return true;
         }
 
-        // TODO: To string instead of manual get_str
-        pub fn get_str(&self) -> Cow<'a, str> {
+        pub fn set_return_code(&mut self, code: Option<i32>) {
+            self.return_code = code;
+        }
+
+        pub fn make_prompt(&mut self) -> String {
             let cd = current_dir();
-            let prompt = self.prompt_base;
-            match cd {
-                Ok(dir) => {
-                    let mut dir_str = dir.into_os_string().into_string().unwrap();
-                    dir_str.push(' ');
-                    dir_str.push_str(prompt);
-                    return dir_str.into();
-                }
-                Err(_) => prompt.into()
+            let mut prompt = String::new();
+            if let Some(code) = self.return_code {
+                write!(&mut prompt, "({}) ", code).unwrap(); // TODO: Not unwrap here
             }
+            if let Ok(dir) = cd {
+                write!(&mut prompt, "{} ", dir.into_os_string().into_string().unwrap()).unwrap(); // TODO: Not unwrap here
+            };
+            prompt.push_str(self.prompt_base);
+            self.reset_state();
+            return prompt;
+        }
+
+        fn reset_state(&mut self) {
+            self.return_code = None;
         }
     }
 

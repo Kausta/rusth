@@ -1,6 +1,6 @@
 /*
  * Project: rusth
- * File: 
+ * File: runner/windows/mod.rs
  * Copyright 2018 Caner Korkmaz (Kausta) [info@canerkorkmaz.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +18,10 @@
 
 mod dir;
 
-use runner::command::{Command, Method};
+use super::command::{Command, Method};
 
 use std::env::current_dir;
 
-#[cfg(not(windows))]
-pub fn get_builtin(cmd_name: &str) -> Option<Method> {
-    None
-}
-
-#[cfg(windows)]
 pub fn get_builtin(cmd_name: &str) -> Option<Method> {
     match cmd_name {
         "ls" => Some(ls),

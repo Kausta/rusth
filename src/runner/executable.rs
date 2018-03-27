@@ -16,44 +16,60 @@
  * limitations under the License.
 */
 
-use runner::command::{Command as Cmd, Method};
+use super::command::{Command as Cmd, RunConfig};
 
+use std::io;
 use std::ffi::OsStr;
-use std::process::Command;
+use std::process::{Command, Child};
 use std::ops::Deref;
 
-pub fn get_run_process() -> Method {
-    return run_process;
-}
-
-pub fn run_process(cmd: &Cmd) -> Option<i32> {
-    return run_process_impl(cmd.command(),
-                            cmd.args.iter().map(|item| item.deref()).skip(1));
-}
-
-fn run_process_impl<I, S>(process_name: &str, args: I) -> Option<i32>
-    where I: IntoIterator<Item=S>,
-          S: AsRef<OsStr> {
-    let res = Command::new(process_name)
-        .args(args)
-        .spawn();
-    match res {
-        Ok(mut child) => {
+pub fn run_process(cmd: &Cmd, run_config: RunConfig) -> Option<i32> {
+    match spawn_process(cmd, run_config) {
+        Some(mut child) => {
             let res = child.wait();
             match res {
                 Ok(exit_status) => {
-                    println!("{0} finished", process_name);
+                    println!("{0} finished", cmd.command());
                     return exit_status.code();
                 }
                 Err(e) => {
-                    eprintln!("Cannot wait for {0}: {1}", process_name, e);
+                    eprintln!("Cannot wait for {0}: {1}", cmd.command(), e);
                     return Some(-2);
                 }
             }
         }
-        Err(e) => {
-            eprintln!("{0} failed to start: {1}", process_name, e);
+        None => {
             return Some(-1);
         }
     }
+}
+
+pub fn spawn_process(cmd: &Cmd, run_config: RunConfig) -> Option<Child> {
+    let res = spawn_process_impl(cmd.command(),
+                                 cmd.args.iter().map(|item| item.deref()).skip(1),
+                                 run_config);
+    match res {
+        Ok(child) => {
+            Some(child)
+        },
+        Err(e) => {
+            eprintln!("{0} failed to start: {1}", cmd.command(), e);
+            None
+        }
+    }
+}
+
+
+fn spawn_process_impl<I, S>(process_name: &str, args: I, conf: RunConfig) -> io::Result<Child>
+    where I: IntoIterator<Item=S>,
+          S: AsRef<OsStr> {
+    let mut cmd = Command::new(process_name);
+    cmd.args(args);
+    if let Some(stdin) = conf.input {
+        cmd.stdin(stdin);
+    }
+    if let Some(stdout) = conf.output {
+        cmd.stdout(stdout);
+    }
+    cmd.spawn()
 }

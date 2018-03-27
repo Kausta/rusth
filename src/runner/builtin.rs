@@ -15,13 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-use runner::windows;
-use runner::command::{Command, Method};
+#[cfg(windows)]
+use super::windows;
+use super::command::{Command, Method};
 
 use std::env::{set_current_dir, current_dir};
 
+#[cfg(not(windows))]
+fn get_builtin_os(_cmd_name: &str) -> Option<Method> {
+    None
+}
+#[cfg(windows)]
+fn get_builtin_os(cmd_name: &str) -> Option<Method> {
+    windows::get_builtin(cmd_name)
+}
+
 pub fn get_builtin(cmd_name: &str) -> Option<Method> {
-    if let Some(builtin) = windows::get_builtin(cmd_name) {
+    if let Some(builtin) = get_builtin_os(cmd_name) {
         return Some(builtin);
     }
     match cmd_name {
