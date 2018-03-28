@@ -27,7 +27,7 @@ pub enum Token<'a> {
 
 #[derive(Debug)]
 pub struct StrToken<'a> {
-    pub content: Cow<'a, str>,
+    pub content: Cow<'a, str>
 }
 
 type LexerIterPeekable<'a> = std::iter::Peekable<Chars<'a>>;

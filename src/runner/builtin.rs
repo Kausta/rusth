@@ -19,7 +19,7 @@
 use super::windows;
 use super::command::{Command, Method};
 
-use std::env::{set_current_dir, current_dir};
+use std::env::{set_current_dir, current_dir, home_dir};
 
 #[cfg(not(windows))]
 fn get_builtin_os(_cmd_name: &str) -> Option<Method> {
@@ -53,13 +53,28 @@ pub fn echo(cmd: &Command) -> Option<i32> {
 pub fn cd(cmd: &Command) -> Option<i32> {
     let c = cmd.args.len();
     if c < 2 {
-        eprintln!("Not enough arguments to cd!");
-        return Some(1);
+        cd_impl("~")
+    } else {
+        cd_impl(cmd.args[1].as_ref())
     }
-    cd_impl(cmd.args[1].as_ref())
 }
 
 fn cd_impl(dir: &str) -> Option<i32> {
+    use std::path::PathBuf;
+
+    let dir = if dir.starts_with('~') {
+        let dir = dir.replacen("~", "", 1);
+
+        let home_dir = home_dir();
+        if home_dir.is_none() {
+            eprintln!("Cannot get home directory!");
+            return Some(5);
+        }
+        let home_dir = home_dir.unwrap();
+        home_dir.join(dir)
+    } else {
+        PathBuf::from(dir)
+    };
     let res = set_current_dir(dir);
     if let Err(e) = res {
         eprintln!("Cannot change directory: {0}", e);

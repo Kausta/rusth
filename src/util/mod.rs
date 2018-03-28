@@ -1,7 +1,7 @@
 /*
  * Project: rusth
- * File: parser/mod.rs
- * Copyright 2018 Caner Korkmaz (Kausta) <info@canerkorkmaz.com>
+ * File: util/mod.rs
+ * Copyright 2018 Caner Korkmaz (Kausta) [info@canerkorkmaz.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-mod lexer;
-#[allow(unknown_lints, module_inception)]
-mod parser;
 
-use self::lexer::Lexer;
-use self::parser::Parser;
-
-use runner::command::Runnable;
-
-pub fn parse(line: &str) -> Result<Runnable, String> {
-    let mut lexer = Lexer::new(line);
-    if let Err(e) = lexer.lex_tokens() {
-        return Err(e.into());
-    };
-    let parser = Parser::new(lexer.collect());
-    Ok(parser.collect())
-}
+pub mod prompt;
+pub mod history;
