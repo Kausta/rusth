@@ -245,7 +245,7 @@ impl<'a> RunnableCmd for Insert<'a> {
         if self.append {
             options.append(true).create(true);
         } else {
-            options.write(true).create_new(true);
+            options.write(true).create(true).truncate(true);
         }
         let mut file = match options.open(self.file_name.as_ref()) {
             Ok(f) => f,
