@@ -30,5 +30,5 @@ pub fn parse(line: &str) -> Result<Runnable, String> {
         return Err(e.into());
     };
     let parser = Parser::new(lexer.collect());
-    Ok(parser.collect())
+    parser.collect()
 }

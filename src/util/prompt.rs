@@ -16,7 +16,7 @@
  * limitations under the License.
 */
 
-use std::env::{current_dir};
+use std::env::current_dir;
 use std::fmt::Write;
 
 #[allow(unused_imports)]
@@ -62,10 +62,10 @@ impl<'a> Prompt<'a> {
         let cd = current_dir();
         let mut prompt = String::new();
         if let Some(code) = self.return_code {
-            write!(&mut prompt, "({}) ", code).unwrap(); // TODO: Not unwrap here
+            write!(&mut prompt, "({}) ", code).expect("Cannot build prompt");
         }
         if let Ok(dir) = cd {
-            write!(&mut prompt, "{} ", dir.into_os_string().into_string().unwrap()).unwrap(); // TODO: Not unwrap here
+            write!(&mut prompt, "{} ", dir.into_os_string().into_string().unwrap()).expect("Cannot get directory string");
         };
         prompt.push_str(self.prompt_base);
         self.reset_state();

@@ -22,7 +22,10 @@ use std::borrow::Cow;
 #[derive(Debug)]
 pub enum Token<'a> {
     Str(StrToken<'a>),
-    Pipe
+    Pipe,
+    Insert,
+    From,
+    Append,
 }
 
 #[derive(Debug)]
@@ -79,11 +82,31 @@ impl<'a> Lexer<'a> {
             '\"' => {
                 self.next();
                 self.next_double_quote()
-            },
+            }
             '|' => {
                 self.next();
                 Ok(Some(Token::Pipe))
-            },
+            }
+            '>' => {
+                self.next();
+                let is_append = {
+                    if let Some(c) = self.peek() {
+                        *c == '>'
+                    } else {
+                        false
+                    }
+                };
+                if is_append {
+                    self.next();
+                    Ok(Some(Token::Append))
+                } else {
+                    Ok(Some(Token::Insert))
+                }
+            }
+            '<' => {
+                self.next();
+                Ok(Some(Token::From))
+            }
             _ => {
                 let current_loc = self.loc;
                 let new_loc = self.take_while(|c| !c.is_whitespace());
@@ -101,21 +124,21 @@ impl<'a> Lexer<'a> {
         'quot: while let Some(c) = self.next() {
             match c {
                 '\\' => {
-                    if let Some(c) = self.next() {
-                        match c {
-                            '"' | '\\' => {
-                                val.push(c);
-                            }
-                            'n' => {
-                                val.push('\n');
-                            }
-                            _ => {
-                                val.push('\\');
-                                val.push(c);
-                            }
+                    let c = match self.next() {
+                        Some(c) => c,
+                        None => break 'quot
+                    };
+                    match c {
+                        '"' | '\\' => {
+                            val.push(c);
                         }
-                    } else {
-                        break 'quot;
+                        'n' => {
+                            val.push('\n');
+                        }
+                        _ => {
+                            val.push('\\');
+                            val.push(c);
+                        }
                     }
                 }
                 '\"' => {

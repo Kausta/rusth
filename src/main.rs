@@ -51,30 +51,8 @@ fn main() {
         println!("No previous history, creating history in {}", history_path.display());
     }
     'read_loop: loop {
-        let readline = rl.readline(&prompt.make_prompt());
-        match readline {
-            Ok(line) => {
-                // Parse the line into command / arguments
-                let parsed = parser::parse(&line);
-                match parsed {
-                    Ok(mut parsed) => {
-                        // Exit if exit is entered
-                        if let Runnable::Cmd(ref mut cmd) = parsed {
-                            if !cmd.empty() && cmd.command() == "exit" {
-                                break 'read_loop;
-                            }
-                        }
-                        // Add to history if not exit
-                        rl.add_history_entry(line.as_ref());
-                        // Run the parsed input
-                        let code = runner::run_command(&mut parsed);
-                        prompt.set_return_code(code);
-                    }
-                    Err(e) => {
-                        println!("Error occured in command: {}", e);
-                    }
-                }
-            }
+        let line = match rl.readline(&prompt.make_prompt()) {
+            Ok(line) => line,
             Err(err) => {
                 use rustyline::error::ReadlineError::*;
                 match err {
@@ -87,7 +65,29 @@ fn main() {
                 }
                 break 'read_loop;
             }
+        };
+
+        // Parse the line into command / arguments
+        let mut parsed = match parser::parse(&line) {
+            Ok(mut parsed) => parsed,
+            Err(e) => {
+                println!("Error occured in command: {}", e);
+                continue 'read_loop;
+            }
+        };
+
+        // Exit if exit is entered
+        if let Runnable::Cmd(ref mut cmd) = parsed {
+            if !cmd.empty() && cmd.command() == "exit" {
+                break 'read_loop;
+            }
         }
+
+        // Add to history if not exit
+        rl.add_history_entry(line.as_ref());
+        // Run the parsed input
+        let code = runner::run_command(&mut parsed);
+        prompt.set_return_code(code);
     }
     rl.save_history(&history_path).unwrap();
 }

@@ -24,21 +24,20 @@ use std::process::{Command, Child};
 use std::ops::Deref;
 
 pub fn run_process(cmd: &Cmd, run_config: RunConfig) -> Option<i32> {
-    match spawn_process(cmd, run_config) {
-        Some(mut child) => {
-            let res = child.wait();
-            match res {
-                Ok(exit_status) => {
-                    println!("{0} finished", cmd.command());
-                    exit_status.code()
-                }
-                Err(e) => {
-                    eprintln!("Cannot wait for {0}: {1}", cmd.command(), e);
-                    Some(-2)
-                }
-            }
+    let mut child = match spawn_process(cmd, run_config) {
+        Some(child) => child,
+        None => { return Some(-1); }
+    };
+    let res = child.wait();
+    match res {
+        Ok(exit_status) => {
+            println!("{0} finished", cmd.command());
+            exit_status.code()
         }
-        None => Some(-1)
+        Err(e) => {
+            eprintln!("Cannot wait for {0}: {1}", cmd.command(), e);
+            Some(-2)
+        }
     }
 }
 
@@ -49,7 +48,7 @@ pub fn spawn_process(cmd: &Cmd, run_config: RunConfig) -> Option<Child> {
     match res {
         Ok(child) => {
             Some(child)
-        },
+        }
         Err(e) => {
             eprintln!("{0} failed to start: {1}", cmd.command(), e);
             None

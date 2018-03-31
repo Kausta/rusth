@@ -32,6 +32,15 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn collect_single<I>(iter: &mut I) -> (Option<Cow<'a, str>>, Option<Token<'a>>)
+        where I: Iterator<Item=Token<'a>> {
+        match iter.next() {
+            Some(Token::Str(token)) => (Some(token.content), None),
+            Some(token) => (None, Some(token)),
+            None => (None, None)
+        }
+    }
+
     fn collect_items<I>(iter: &mut I) -> (Vec<Cow<'a, str>>, Option<Token<'a>>)
         where I: Iterator<Item=Token<'a>> {
         let mut items = Vec::new();
@@ -44,28 +53,43 @@ impl<'a> Parser<'a> {
         (items, None)
     }
 
-    pub fn collect(self) -> Runnable<'a> {
+    pub fn collect(self) -> Result<Runnable<'a>, String> {
         let iter = &mut self.tokens.into_iter();
         let res = Parser::collect_items(iter);
         let (items, token) = res;
         match token {
-            Some(token) => {
-                match token {
-                    Token::Pipe => {
-                        let res_next = Parser::collect_items(iter);
-                        let (items_next, token_next) = res_next;
-                        if let Some(token) = token_next {
-                            eprintln!("Unexpected token {:?}, commands more than 2 not implemented", token)
-                        }
-                        Runnable::Pipe(Pipe::new(Command::new(items), Command::new(items_next)))
-                    },
-                    _ => {
-                        panic!("Either unimplemented token type, or collect_items not working")
-                    }
+            Some(Token::Pipe) => {
+                let res_next = Parser::collect_items(iter);
+                let (items_next, token_next) = res_next;
+                match token_next {
+                    Some(token) => Err(format!("Unexpected token {:?}, commands more than 2 not implemented, will ignore the rest", token)),
+                    None => Ok(Runnable::Pipe(Pipe::new(Command::new(items), Command::new(items_next))))
                 }
             }
+            Some(Token::Insert) => {
+                match Parser::collect_single(iter) {
+                    (Some(file_name), None) => Ok(Runnable::Insert(Insert::new(Command::new(items), file_name))),
+                    (None, Some(token)) => Err(format!("Unexpected token {:?}", token)),
+                    (None, None) => Err("Expected token as filename!".to_string()),
+                    (Some(_), Some(_)) => unreachable!()
+                }
+            }
+            Some(Token::Append) => {
+                match Parser::collect_single(iter) {
+                    (Some(file_name), None) => Ok(Runnable::Append(Append::new(Command::new(items), file_name))),
+                    (None, Some(token)) => Err(format!("Unexpected token {:?}", token)),
+                    (None, None) => Err("Expected token as filename!".to_string()),
+                    (Some(_), Some(_)) => unreachable!()
+                }
+            }
+            Some(Token::From) => {
+                Ok(Runnable::From)
+            }
+            Some(_) => {
+                Err("Either unimplemented token type, or collect_items not working".to_string())
+            }
             None => {
-                Runnable::Cmd(Command::new(items))
+                Ok(Runnable::Cmd(Command::new(items)))
             }
         }
     }
